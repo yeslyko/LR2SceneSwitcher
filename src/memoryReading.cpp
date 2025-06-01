@@ -10,17 +10,16 @@ DWORD WINAPI LR2Listen(LPVOID lpParam) {
 
     std::cout << currentDateTime() << "LR2Listen started, performing initial checks...\n";
 
-    int lastProcSelecter = -1; // Initialize to invalid value
+    int lastProcSelecter = -1;
     bool wasInitialized = false;
 
-    while (true) { // Changed to infinite loop
+    while (true) {
         if (!LR2::isInit) {
             if (wasInitialized) {
                 std::cout << currentDateTime() << "LR2 initialization lost, attempting to reinitialize...\n";
                 wasInitialized = false;
             }
 
-            // Attempt to initialize
             LR2::Init();
 
             if (LR2::isInit) {
@@ -30,12 +29,11 @@ DWORD WINAPI LR2Listen(LPVOID lpParam) {
                 wasInitialized = true;
             }
             else {
-                Sleep(1000); // Wait a second before trying again
+                Sleep(2000);
                 continue;
             }
         }
 
-        // Only proceed with scene checking if initialized
         if (LR2::isInit) {
             wasInitialized = true;
             int currentProc = LR2::pGame->procSelecter;
@@ -66,7 +64,7 @@ DWORD WINAPI LR2Listen(LPVOID lpParam) {
             }
         }
 
-        Sleep(200); // Reduced sleep time for more responsive checking
+        Sleep(500);
     }
 
     return 0;
