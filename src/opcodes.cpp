@@ -88,7 +88,6 @@ bool ReadOpCode(std::string message, WebSocketClient& client) {
 
             if (CreateThread(nullptr, 0, (LPTHREAD_START_ROUTINE)LR2Listen, &client, 0, nullptr) == nullptr) {
                 std::cout << currentDateTime() << "Failed to create LR2 listener thread\n";
-                std::cout.flush();
             }
             return true;
 

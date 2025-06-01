@@ -8,7 +8,7 @@
 DWORD WINAPI LR2Listen(LPVOID lpParam) {
     WebSocketClient* client = static_cast<WebSocketClient*>(lpParam);
 
-    std::cout << currentDateTime() << "LR2Listen started, performing initial checks..." << std::endl;
+    std::cout << currentDateTime() << "LR2Listen started, performing initial checks...\n";
 
     int lastProcSelecter = -1; // Initialize to invalid value
     bool wasInitialized = false;
@@ -16,7 +16,7 @@ DWORD WINAPI LR2Listen(LPVOID lpParam) {
     while (true) { // Changed to infinite loop
         if (!LR2::isInit) {
             if (wasInitialized) {
-                std::cout << currentDateTime() << "LR2 initialization lost, attempting to reinitialize..." << std::endl;
+                std::cout << currentDateTime() << "LR2 initialization lost, attempting to reinitialize...\n";
                 wasInitialized = false;
             }
 
@@ -24,7 +24,7 @@ DWORD WINAPI LR2Listen(LPVOID lpParam) {
             LR2::Init();
 
             if (LR2::isInit) {
-                std::cout << currentDateTime() << "LR2 successfully initialized!" << std::endl;
+                std::cout << currentDateTime() << "LR2 successfully initialized!\n";
                 std::cout << currentDateTime() << "pGame address: " << std::hex << LR2::pGame
                     << ", procSelecter offset: " << std::hex << &(LR2::pGame->procSelecter) << std::dec << std::endl;
                 wasInitialized = true;
@@ -46,15 +46,15 @@ DWORD WINAPI LR2Listen(LPVOID lpParam) {
 
                 switch (currentProc) {
                 case 2:
-                    std::cout << currentDateTime() << "Requesting change to song select scene." << std::endl;
+                    std::cout << currentDateTime() << "Requesting change to song select scene.\n";
                     SendOpCode(settings.selectScene, *client);
                     break;
                 case 4:
-                    std::cout << currentDateTime() << "Requesting change to play scene." << std::endl;
+                    std::cout << currentDateTime() << "Requesting change to play scene.\n";
                     SendOpCode(settings.playScene, *client);
                     break;
                 case 5:
-                    std::cout << currentDateTime() << "Requesting change to result scene." << std::endl;
+                    std::cout << currentDateTime() << "Requesting change to result scene.\n";
                     SendOpCode(settings.resultScene, *client);
                     break;
                 default:

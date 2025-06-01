@@ -33,11 +33,8 @@ void CleanupConsole() {
 
 void LoadSettings(HMODULE hModule) {
 #ifdef _DEBUG
-	// Move console setup to the start of the thread
 	SetupConsole();
-	// Add a test message to verify console is working
-	std::cout << currentDateTime() << "Debug console initialized" << std::endl;
-	std::cout.flush(); // Force output to display
+	std::cout << currentDateTime() << "Debug console initialized\n";
 #endif
 
 	TCHAR module_path[MAX_PATH] = {};
@@ -49,7 +46,7 @@ void LoadSettings(HMODULE hModule) {
 	auto settings_list = std::wfstream(settings_path);
 
 	if (!std::filesystem::exists(settings_path)) {
-		std::cout << currentDateTime() << "Settings file not found, creatinf one." << std::endl;
+		std::cout << currentDateTime() << "Settings file not found, creatinf one.\n";
 		std::wstring settingstemplate =
 			L"# Leave the password field empty if you are not using it for authenticating to\n"
 			L"# WebSocket server.For the sake of security, I strongly recommend using password.\n"

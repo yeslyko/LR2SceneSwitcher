@@ -52,12 +52,10 @@ bool WebSocketClient::performHandshake(const std::string& host, const std::strin
         "Sec-WebSocket-Protocol: obswebsocket.json\r\n"
         "\r\n";
 
-    std::cout << currentDateTime() << "Sending handshake request..." << std::endl;
-    std::cout.flush();
+    std::cout << currentDateTime() << "Sending handshake request...\n";
 
     if (send(sock, handshake.c_str(), handshake.length(), 0) < 0) {
         std::cout << currentDateTime() << "Failed to send handshake. Error: " << WSAGetLastError() << std::endl;
-        std::cout.flush();
         return false;
     }
 
@@ -65,13 +63,11 @@ bool WebSocketClient::performHandshake(const std::string& host, const std::strin
     int bytes = recv(sock, buffer, sizeof(buffer) - 1, 0);
     if (bytes < 0) {
         std::cout << currentDateTime() << "Failed to receive handshake response. Error: " << WSAGetLastError() << std::endl;
-        std::cout.flush();
         return false;
     }
     buffer[bytes] = 0;
 
     std::cout << currentDateTime() << "Received handshake response: " << buffer << std::endl;
-    std::cout.flush();
 
     return strstr(buffer, "101 Switching Protocols") != nullptr;
 }
@@ -242,15 +238,12 @@ void StartWebSocketClient() {
     WebSocketClient client;
     std::cout << currentDateTime() << "Attempting to connect to OBS WebSocket server at "
         << settings.ip << ":" << settings.port << std::endl;
-    std::cout.flush();
 
     if (client.connect(settings.ip, settings.port)) {
         std::cout << currentDateTime() << "Connected to WebSocket server\n";
-        std::cout.flush();
 
         if (settings.authenticate) {
             std::cout << currentDateTime() << "Authentication required\n";
-            std::cout.flush();
         }
 
         while (client.isConnected()) {
@@ -258,19 +251,15 @@ void StartWebSocketClient() {
             std::cout << "question mark" << message << std::endl;
             if (!message.empty()) {
                 std::cout << currentDateTime() << "Received: " << message << std::endl;
-                std::cout.flush();
                 if (!ReadOpCode(message, client)) {
                     std::cout << currentDateTime() << "Failed to process message\n";
-                    std::cout.flush();
                     break;
                 }
             }
         }
         std::cout << currentDateTime() << "WebSocket connection ended\n";
-        std::cout.flush();
     }
     else {
         std::cout << currentDateTime() << "Failed to connect to WebSocket server\n";
-        std::cout.flush();
     }
 }

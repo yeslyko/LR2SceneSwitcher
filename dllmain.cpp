@@ -34,7 +34,6 @@ BOOL APIENTRY DllMain(HMODULE hModule,
 #ifdef _DEBUG
 		if (CreateThread(nullptr, 0, (LPTHREAD_START_ROUTINE)StartWebSocketClient, nullptr, 0, nullptr) == nullptr) {
 			std::cout << currentDateTime() << "Failed to create WebSocket client thread\n";
-			std::cout.flush();
 		}
 #else
 		CreateThread(nullptr, 0, (LPTHREAD_START_ROUTINE)StartWebSocketClient, nullptr, 0, nullptr);
