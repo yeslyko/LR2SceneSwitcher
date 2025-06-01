@@ -21,3 +21,9 @@ with some bare tests and can be incredibly buggy right now. Please report bugs i
 ## TODO
 - Connecting to the server without using authentication
 - Make this abomination less ugly
+
+## Used libraries:
+- [LR2Mem](https://github.com/MatVeiQaaa/LR2Mem/)
+- [cpp-base64](https://github.com/ReneNyffenegger/cpp-base64)
+- [nlohmann-json](https://github.com/nlohmann/json)
+- [sha256](https://github.com/LekKit/sha256)
