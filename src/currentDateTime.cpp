@@ -1,17 +1,10 @@
 #include "pch.h"
 #include "currentDateTime.h"
-#include <ctime>
+#include <chrono>
+#include <format>
 
 std::string currentDateTime() {
-    time_t     now = time(0);
-    struct tm  tstruct;
-    char       buf[80];
-    errno_t err = localtime_s(&tstruct, &now);
-    if (err != 0) {
-        throw std::runtime_error("Failed to convert time using localtime_s");
-    }
-    strftime(buf, sizeof(buf), "%Y-%m-%d %X", &tstruct);
-    
-    std::string result = "[" + std::string(buf) + "] ";
-    return result;
+    auto const time = std::chrono::current_zone()
+        ->to_local(std::chrono::system_clock::now());
+    return std::format("[{:%Y-%m-%d %X}] ", time);
 }
