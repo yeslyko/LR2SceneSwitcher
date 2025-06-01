@@ -3,11 +3,10 @@
 #ifndef PCH_H
 #define PCH_H
 
-// Add headers that you want to pre-compile here
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
-#include <sha256/sha256.h>  // Add this
-#include <cpp-base64/base64.h>  // Add this
+#include <sha256/sha256.h>
+#include <cpp-base64/base64.h>
 
 #endif //PCH_H
 
