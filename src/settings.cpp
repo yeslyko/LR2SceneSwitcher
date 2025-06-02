@@ -46,13 +46,13 @@ void LoadSettings(HMODULE hModule) {
 	std::wfstream settings_list;
 
 	if (!std::filesystem::exists(settings_path)) {
-		std::cout << currentDateTime() << "Settings file not found, creatinf one.\n";
+		std::cout << currentDateTime() << "Settings file not found, creating one.\n";
 		std::wstring settingstemplate =
 			L"# Leave the password field empty if you are not using it for authenticating to\n"
 			L"# WebSocket server.For the sake of security, I strongly recommend using password.\n"
 			L"ip = \n"
 			L"port = 4455\n"
-			L"password =\n\n"
+			L"password = \n\n"
 			L"# Type your OBS scene names here.\n"
 			L"selectScene = \n"
 			L"playScene = \n"
