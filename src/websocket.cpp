@@ -236,30 +236,46 @@ std::vector<uint8_t> WebSocketClient::encodeWebSocketFrame(const std::string& me
 
 void StartWebSocketClient() {
     WebSocketClient client;
-    std::cout << currentDateTime() << "Attempting to connect to OBS WebSocket server at "
-        << settings.ip << ":" << settings.port << std::endl;
 
-    if (client.connect(settings.ip, settings.port)) {
-        std::cout << currentDateTime() << "Connected to WebSocket server\n";
+    int retryCount = 0;
+    bool connected = false;
 
-        if (settings.authenticate) {
-            std::cout << currentDateTime() << "Authentication required\n";
-        }
+    while (!connected && retryCount < 5) {
+        std::cout << currentDateTime() << "Attempting to connect to OBS WebSocket server at "
+            << settings.ip << ":" << settings.port
+            << (retryCount > 0 ? " (Retry " + std::to_string(retryCount) + ")" : "") << std::endl;
 
-        while (client.isConnected()) {
-            std::string message = client.receiveMessage();
-            std::cout << "question mark" << message << std::endl;
-            if (!message.empty()) {
-                std::cout << currentDateTime() << "Received: " << message << std::endl;
-                if (!ReadOpCode(message, client)) {
-                    std::cout << currentDateTime() << "Failed to process message\n";
-                    break;
+        if (client.connect(settings.ip, settings.port)) {
+            connected = true;
+            std::cout << currentDateTime() << "Connected to WebSocket server\n";
+
+            if (settings.authenticate) {
+                std::cout << currentDateTime() << "Authentication required\n";
+            }
+
+            while (client.isConnected()) {
+                std::string message = client.receiveMessage();
+                if (!message.empty()) {
+                    std::cout << currentDateTime() << "Received: " << message << std::endl;
+                    if (!ReadOpCode(message, client)) {
+                        std::cout << currentDateTime() << "Failed to process message\n";
+                        break;
+                    }
                 }
             }
+            std::cout << currentDateTime() << "WebSocket connection ended\n";
         }
-        std::cout << currentDateTime() << "WebSocket connection ended\n";
+        else {
+            std::cout << currentDateTime() << "Failed to connect to WebSocket server\n";
+            if (retryCount < 4) {
+                std::cout << currentDateTime() << "Retrying in 10 seconds...\n";
+                Sleep(10000);
+            }
+            retryCount++;
+        }
     }
-    else {
-        std::cout << currentDateTime() << "Failed to connect to WebSocket server\n";
+
+    if (!connected) {
+        std::cout << currentDateTime() << "Failed to connect after " << 5 << " attempts\n";
     }
 }
