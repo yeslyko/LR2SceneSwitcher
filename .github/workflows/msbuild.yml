@@ -46,4 +46,4 @@ jobs:
     - name: Upload a Build Artifact
       uses: actions/upload-artifact@v4.6.2
       with:
-        path: D:\a\LR2SceneSwitcher\Release\LR2SceneSwitcher.dll
+        path: D:\a\LR2SceneSwitcher\LR2SceneSwitcher\Release\LR2SceneSwitcher.dll
