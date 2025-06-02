@@ -3,7 +3,7 @@
 #include "websocket.h"
 #include "settings.h"
 #include "memoryReading.h"
-#include <nlohmann/json.hpp>
+#include <json/single_include/nlohmann/json.hpp>
 #include <string>
 
 using json = nlohmann::json;

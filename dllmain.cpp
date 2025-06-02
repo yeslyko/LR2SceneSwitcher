@@ -9,7 +9,7 @@
 #include <winsock2.h>
 #include <ws2tcpip.h>
 #include <vector>
-#include <nlohmann/json.hpp>
+#include <json/single_include/nlohmann/json.hpp>
 #include <filesystem>
 #include <Windows.h>
 #include <fstream>
@@ -21,6 +21,7 @@ using json = nlohmann::json;
 using namespace nlohmann::literals;
 
 #pragma comment(lib, "ws2_32.lib")
+#pragma comment(lib, "LR2Mem.lib")
 
 BOOL APIENTRY DllMain(HMODULE hModule,
 	DWORD  ul_reason_for_call,

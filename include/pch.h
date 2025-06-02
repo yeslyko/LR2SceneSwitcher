@@ -17,4 +17,4 @@
 #include <filesystem>
 #include <fstream>
 #include <vector>
-#include <nlohmann/json.hpp>
+#include <json/single_include/nlohmann/json.hpp>
