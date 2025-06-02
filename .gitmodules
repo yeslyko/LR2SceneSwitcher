@@ -1,0 +1,12 @@
+[submodule "externals/cpp-base64"]
+	path = externals/cpp-base64
+	url = git@github.com:ReneNyffenegger/cpp-base64.git
+[submodule "externals/json"]
+	path = externals/json
+	url = git@github.com:nlohmann/json.git
+[submodule "externals/sha256"]
+	path = externals/sha256
+	url = git@github.com:LekKit/sha256.git
+[submodule "externals/LR2Mem"]
+	path = externals/LR2Mem
+	url = git@github.com:MatVeiQaaa/LR2Mem.git
