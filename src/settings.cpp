@@ -43,7 +43,7 @@ void LoadSettings(HMODULE hModule) {
 	std::filesystem::path settings_path = std::filesystem::path(module_path).remove_filename().append("LR2SceneSwitcher.ini");
 	std::cout << currentDateTime() << "Loading settings from: " << settings_path.string() << std::endl;
 
-	auto settings_list = std::wfstream(settings_path);
+	std::wfstream settings_list;
 
 	if (!std::filesystem::exists(settings_path)) {
 		std::cout << currentDateTime() << "Settings file not found, creatinf one.\n";
@@ -58,9 +58,11 @@ void LoadSettings(HMODULE hModule) {
 			L"playScene = \n"
 			L"resultScene = \n";
 		settings_list.open(settings_path, std::ios::out | std::ios::trunc);
-		settings_list.write(settingstemplate.c_str(), settingstemplate.length());
+		settings_list << settingstemplate;
+		settings_list.close();
 	}
-
+	
+	settings_list.open(settings_path, std::ios::in);
 	if (settings_list.is_open()) {
 		for (std::wstring line; std::getline(settings_list, line);) {
 			if (line.empty() || line.starts_with(L"#"))
