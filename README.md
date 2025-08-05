@@ -20,6 +20,7 @@ with some bare tests and can be incredibly buggy right now. Please report bugs i
 
 ## TODO
 - Connecting to the server without using authentication
+- Automatic recording of scores
 - Make this abomination less ugly
 
 ## Used libraries:
