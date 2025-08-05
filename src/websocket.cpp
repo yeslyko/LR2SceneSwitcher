@@ -12,7 +12,7 @@ WebSocketClient::WebSocketClient() : sock(INVALID_SOCKET), connected(false) {
         std::cerr << currentDateTime() << "WSAStartup failed with error: " << WSAGetLastError() << std::endl;
         return;
     }
-    srand(static_cast<unsigned int>(time(nullptr))); // Initialize random seed
+    srand(static_cast<unsigned int>(time(nullptr)));
 }
 
 WebSocketClient::~WebSocketClient() {
@@ -240,7 +240,7 @@ void StartWebSocketClient() {
     int retryCount = 0;
     bool connected = false;
 
-    while (!connected && retryCount < 5) {
+    while (!connected && retryCount < 10) {
         std::cout << currentDateTime() << "Attempting to connect to OBS WebSocket server at "
             << settings.ip << ":" << settings.port
             << (retryCount > 0 ? " (Retry " + std::to_string(retryCount) + ")" : "") << std::endl;
@@ -264,10 +264,11 @@ void StartWebSocketClient() {
                 }
             }
             std::cout << currentDateTime() << "WebSocket connection ended\n";
+            connected = false;
         }
         else {
             std::cout << currentDateTime() << "Failed to connect to WebSocket server\n";
-            if (retryCount < 4) {
+            if (retryCount < 9) {
                 std::cout << currentDateTime() << "Retrying in 10 seconds...\n";
                 Sleep(10000);
             }
