@@ -1,4 +1,5 @@
 #pragma once
 #include <LR2Mem/LR2Bindings.hpp>
+#include <websocket.h>
 
-DWORD WINAPI LR2Listen(LPVOID lpParam);
+int LR2Listen(WebSocketClient* client);

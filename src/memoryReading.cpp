@@ -5,15 +5,13 @@
 #include "settings.h"
 #include "opcodes.h"
 
-DWORD WINAPI LR2Listen(LPVOID lpParam) {
-    WebSocketClient* client = static_cast<WebSocketClient*>(lpParam);
-
+int LR2Listen(WebSocketClient* client) {
     std::cout << currentDateTime() << "LR2Listen started, performing initial checks...\n";
 
     int lastProcSelecter = -1;
     bool wasInitialized = false;
 
-    while (true) {
+    while (client->isConnected()) {
         if (!LR2::isInit) {
             if (wasInitialized) {
                 std::cout << currentDateTime() << "LR2 initialization lost, attempting to reinitialize...\n";
@@ -29,7 +27,7 @@ DWORD WINAPI LR2Listen(LPVOID lpParam) {
                 wasInitialized = true;
             }
             else {
-                Sleep(2000);
+                std::this_thread::sleep_for(std::chrono::seconds(2));
                 continue;
             }
         }
@@ -64,7 +62,7 @@ DWORD WINAPI LR2Listen(LPVOID lpParam) {
             }
         }
 
-        Sleep(500);
+        std::this_thread::sleep_for(std::chrono::milliseconds(500));
     }
 
     return 0;
