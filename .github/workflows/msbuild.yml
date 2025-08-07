@@ -45,3 +45,12 @@ jobs:
       uses: actions/upload-artifact@v4.6.2
       with:
         path: D:\a\LR2SceneSwitcher\LR2SceneSwitcher\Release\LR2SceneSwitcher.dll
+
+    - name: Release a Build Artifact
+      uses: marvinpinto/action-automatic-releases@latest
+      with:
+        repo_token: "${{ secrets.GITHUB_TOKEN }}"
+        automatic_release_tag: "latest"
+        prerelease: true
+        title: "Latest Commit Build"
+        files: D:\a\LR2SceneSwitcher\LR2SceneSwitcher\Release\LR2SceneSwitcher.dll
