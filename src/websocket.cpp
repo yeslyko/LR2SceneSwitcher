@@ -16,6 +16,8 @@ WebSocketClient::WebSocketClient() : sock(INVALID_SOCKET), connected(false) {
 }
 
 WebSocketClient::~WebSocketClient() {
+    if (recvThread.joinable()) recvThread.join();
+    if (sendThread.joinable()) sendThread.join();
     if (sock != INVALID_SOCKET) {
         closesocket(sock);
     }
@@ -234,6 +236,44 @@ std::vector<uint8_t> WebSocketClient::encodeWebSocketFrame(const std::string& me
     return frame;
 }
 
+bool WebSocketClient::startRecvThread(std::function<int(WebSocketClient*)> function) {
+    if (!recvThread.joinable()) {
+        recvThread = std::thread(function, this);
+        recvThread.detach();
+        return true;
+    }
+    return false;
+}
+
+bool WebSocketClient::startSendThread(std::function<int(WebSocketClient*)> function) {
+    if (!sendThread.joinable()) {
+        sendThread = std::thread(function, this);
+        sendThread.detach();
+        return true;
+    }
+    return false;
+}
+
+static int recvLoop(WebSocketClient* client) {
+    if (settings.authenticate) {
+        std::cout << currentDateTime() << "Authentication required\n";
+    }
+
+    while (client->isConnected()) {
+        std::string message = client->receiveMessage();
+        if (!message.empty()) {
+            std::cout << currentDateTime() << "Received: " << message << std::endl;
+            if (!ReadOpCode(message, *client)) {
+                std::cout << currentDateTime() << "Failed to process message\n";
+                break;
+            }
+        }
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    }
+
+    return 0;
+}
+
 void StartWebSocketClient() {
     WebSocketClient client;
 
@@ -249,20 +289,12 @@ void StartWebSocketClient() {
             connected = true;
             std::cout << currentDateTime() << "Connected to WebSocket server\n";
 
-            if (settings.authenticate) {
-                std::cout << currentDateTime() << "Authentication required\n";
-            }
+            client.startRecvThread(recvLoop);
 
             while (client.isConnected()) {
-                std::string message = client.receiveMessage();
-                if (!message.empty()) {
-                    std::cout << currentDateTime() << "Received: " << message << std::endl;
-                    if (!ReadOpCode(message, client)) {
-                        std::cout << currentDateTime() << "Failed to process message\n";
-                        break;
-                    }
-                }
+                std::this_thread::sleep_for(std::chrono::milliseconds(50));
             }
+
             std::cout << currentDateTime() << "WebSocket connection ended\n";
             connected = false;
         }
@@ -270,7 +302,7 @@ void StartWebSocketClient() {
             std::cout << currentDateTime() << "Failed to connect to WebSocket server\n";
             if (retryCount < 9) {
                 std::cout << currentDateTime() << "Retrying in 10 seconds...\n";
-                Sleep(10000);
+                std::this_thread::sleep_for(std::chrono::seconds(10));
             }
             retryCount++;
         }

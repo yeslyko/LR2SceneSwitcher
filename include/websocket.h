@@ -4,6 +4,8 @@
 #include <winsock2.h>
 #include <string>
 #include <vector>
+#include <thread>
+#include <functional>
 
 void StartWebSocketClient();
 
@@ -11,6 +13,9 @@ class WebSocketClient {
 private:
     SOCKET sock;
     bool connected;
+    std::thread recvThread;
+    std::thread sendThread;
+
     static const size_t BUFFER_SIZE = 1024;
     static const uint8_t OPCODE_CLOSE = 0x8;
     static const uint8_t OPCODE_TEXT = 0x1;
@@ -64,4 +69,6 @@ public:
     std::string receiveMessage();
     bool sendMessage(const std::string& message);
     bool isConnected() const;
+    bool startRecvThread(std::function<int(WebSocketClient*)> function);
+    bool startSendThread(std::function<int(WebSocketClient*)> function);
 };

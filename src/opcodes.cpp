@@ -86,7 +86,7 @@ bool ReadOpCode(std::string message, WebSocketClient& client) {
             settings.authenticated = true;
             std::cout << currentDateTime() << "Authenticated successfully. Negotiated RPC version: " << settings.rpcVersion << std::endl;
 
-            if (CreateThread(nullptr, 0, (LPTHREAD_START_ROUTINE)LR2Listen, &client, 0, nullptr) == nullptr) {
+            if (!client.startSendThread(LR2Listen)) {
                 std::cout << currentDateTime() << "Failed to create LR2 listener thread\n";
             }
             return true;
