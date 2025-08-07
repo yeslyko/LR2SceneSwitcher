@@ -69,6 +69,6 @@ public:
     std::string receiveMessage();
     bool sendMessage(const std::string& message);
     bool isConnected() const;
-    bool startRecvThread(std::function<int(WebSocketClient*)> function);
-    bool startSendThread(std::function<int(WebSocketClient*)> function);
+    void startRecvThread(std::function<int(WebSocketClient*)> function);
+    void startSendThread(std::function<int(WebSocketClient*)> function);
 };

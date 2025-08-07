@@ -236,22 +236,14 @@ std::vector<uint8_t> WebSocketClient::encodeWebSocketFrame(const std::string& me
     return frame;
 }
 
-bool WebSocketClient::startRecvThread(std::function<int(WebSocketClient*)> function) {
-    if (!recvThread.joinable()) {
-        recvThread = std::thread(function, this);
-        recvThread.detach();
-        return true;
-    }
-    return false;
+void WebSocketClient::startRecvThread(std::function<int(WebSocketClient*)> function) {
+    if (recvThread.joinable()) recvThread.join();
+    recvThread = std::thread(std::move(function), this);
 }
 
-bool WebSocketClient::startSendThread(std::function<int(WebSocketClient*)> function) {
-    if (!sendThread.joinable()) {
-        sendThread = std::thread(function, this);
-        sendThread.detach();
-        return true;
-    }
-    return false;
+void WebSocketClient::startSendThread(std::function<int(WebSocketClient*)> function) {
+    if (sendThread.joinable()) sendThread.join();
+    sendThread = std::thread(std::move(function), this);
 }
 
 static int recvLoop(WebSocketClient* client) {
