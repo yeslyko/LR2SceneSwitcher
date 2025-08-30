@@ -13,6 +13,7 @@ struct Settings {
     std::string resultScene;
     int rpcVersion;
     bool authenticated;
+    int recordType; // 0 - Disable, 1 - Record, 2 - ReplayBuffer
 };
 
 extern Settings settings;

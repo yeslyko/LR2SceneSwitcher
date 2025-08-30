@@ -56,7 +56,9 @@ void LoadSettings(HMODULE hModule) {
 			L"# Type your OBS scene names here.\n"
 			L"selectScene = \n"
 			L"playScene = \n"
-			L"resultScene = \n";
+			L"resultScene = \n"
+			L"# Set your record type in here.\n"
+			L"recordType = 0\n";
 		settings_list.open(settings_path, std::ios::out | std::ios::trunc);
 		settings_list << settingstemplate;
 		settings_list.close();
@@ -114,6 +116,11 @@ void LoadSettings(HMODULE hModule) {
 				std::string resultScene(wresultScene.begin(), wresultScene.end());
 				settings.resultScene = resultScene;
 			}
+			if (line.starts_with(L"recordType = ")) {
+				std::wstring wrecordType = line.substr(std::wstring_view(L"recordType = ").length());
+				int recordType = std::stoi(wrecordType);
+				settings.recordType = recordType;
+			}
 			// Heyy! That's still less bloated than Tachi Score Importer!!!
 		}
 
@@ -125,6 +132,7 @@ void LoadSettings(HMODULE hModule) {
 			<< "\nSelect Scene: " << settings.selectScene
 			<< "\nPlay Scene: " << settings.playScene
 			<< "\nResult Scene: " << settings.resultScene
+			<< "\nRecord Type: " << settings.recordType
 			<< std::endl;
 	}
 }

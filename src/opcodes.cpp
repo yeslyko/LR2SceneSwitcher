@@ -104,12 +104,14 @@ bool ReadOpCode(std::string message, WebSocketClient& client) {
     }
 }
 
-void SendOpCode(std::string argument, WebSocketClient& client) {
+void SendOpCode(std::string reqName, std::string argument, WebSocketClient& client) {
     json data;
     data["op"] = 6;
-    data["d"]["requestType"] = "SetCurrentProgramScene";
+    data["d"]["requestType"] = reqName;
     data["d"]["requestId"] = "idk whats this";
-    data["d"]["requestData"]["sceneName"] = argument;
+    if (reqName._Equal("SetCurrentProgramScene") && !argument.empty()) {
+        data["d"]["requestData"]["sceneName"] = argument;
+    }
 
     std::string datadump = data.dump();
     client.sendMessage(datadump);
