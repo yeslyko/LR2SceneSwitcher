@@ -13,7 +13,10 @@ struct Settings {
     std::string resultScene;
     int rpcVersion;
     bool authenticated;
-    int recordType; // 0 - Disable, 1 - Record, 2 - ReplayBuffer
+    int recordType = 0; // 0 - Disable, 1 - Record, 2 - ReplayBuffer
+    int recordShortcutKey = 0x75; // shortcut key for recording (stop in Record, save in ReplayBuffer)
+    int recordStartDelay = 0; // delay start recording (in milliseconds)
+    int recordEndDelay = 0; // delay stop recording (in milliseconds)
 };
 
 extern Settings settings;

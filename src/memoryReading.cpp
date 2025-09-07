@@ -4,6 +4,9 @@
 #include "currentDateTime.h"
 #include "settings.h"
 #include "opcodes.h"
+#include <future>
+
+BOOL hasRequestRecordingStop = false;
 
 int LR2Listen(WebSocketClient* client) {
     std::cout << currentDateTime() << "LR2Listen started, performing initial checks...\n";
@@ -41,17 +44,20 @@ int LR2Listen(WebSocketClient* client) {
             isResult = currentProc == 5;
 
             if (isResult && recordType > 0) {
-                if (GetAsyncKeyState(VK_F6) & 0x8000) {
-                    switch (recordType) {
-                    case 1:
-                        SendOpCode("StopRecord", *client);
-                        break;
-                    case 2:
-                        SendOpCode("SaveReplayBuffer", *client);
-                        break;
+                if (GetAsyncKeyState(settings.recordShortcutKey) & 0x8000) {
+                    if (!hasRequestRecordingStop) {
+                        switch (recordType) {
+                        case 1:
+                            SendOpCode("StopRecord", *client);
+                            break;
+                        case 2:
+                            SendOpCode("SaveReplayBuffer", *client);
+                            break;
 
-                    default:
-                        break;
+                        default:
+                            break;
+                        }
+                        hasRequestRecordingStop = true;
                     }
                 }
             }
@@ -62,31 +68,17 @@ int LR2Listen(WebSocketClient* client) {
 
                 switch (currentProc) {
                 case 2:
-                    std::cout << currentDateTime() << "Requesting change to song select scene.\n";
-                    switch (recordType) {
-                    case 1:
-                        SendOpCode("StopRecord", *client);
-                        break;
-                    case 2:
-                        SendOpCode("StopReplayBuffer", *client);
-                        break;
-
-                    default:
-                        break;
+                    if (settings.recordType > 0) {
+                        std::cout << currentDateTime() << "Requesting stop recording.\n";
+                        std::async(std::launch::async, recordDelayTask, currentProc, std::ref(*client));
                     }
+                    std::cout << currentDateTime() << "Requesting change to song select scene.\n";
                     SendOpCode("SetCurrentProgramScene", settings.selectScene, *client);
                     break;
                 case 3:
-                    switch (recordType) {
-                    case 1:
-                        SendOpCode("StartRecord", *client);
-                        break;
-                    case 2:
-                        SendOpCode("StartReplayBuffer", *client);
-                        break;
-
-                    default:
-                        break;
+                    if (settings.recordType > 0) {
+                        std::cout << currentDateTime() << "Requesting start recording.\n";
+                        std::async(std::launch::async, recordDelayTask, currentProc, std::ref(*client));
                     }
                     break;
                 case 4:
@@ -110,4 +102,41 @@ int LR2Listen(WebSocketClient* client) {
     }
 
     return 0;
+}
+
+void recordDelayTask(int currentProc, WebSocketClient& client) {
+    switch (currentProc) {
+    case 2:
+        if (settings.recordEndDelay > 0) std::this_thread::sleep_for(std::chrono::milliseconds(settings.recordEndDelay));
+        switch (settings.recordType) {
+        case 1:
+            if (!hasRequestRecordingStop) SendOpCode("StopRecord", client);
+            else hasRequestRecordingStop = false;
+            break;
+        case 2:
+            SendOpCode("StopReplayBuffer", client);
+            break;
+
+        default:
+            break;
+        }
+        break;
+    case 3:
+        if (settings.recordStartDelay > 0) std::this_thread::sleep_for(std::chrono::milliseconds(settings.recordStartDelay));
+        switch (settings.recordType) {
+        case 1:
+            SendOpCode("StartRecord", client);
+            break;
+        case 2:
+            SendOpCode("StartReplayBuffer", client);
+            break;
+
+        default:
+            break;
+        }
+        break;
+
+    default:
+        break;
+    }
 }
