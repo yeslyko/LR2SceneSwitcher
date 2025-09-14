@@ -89,6 +89,10 @@ int LR2Listen(WebSocketClient* client) {
                     std::cout << currentDateTime() << "Requesting change to result scene.\n";
                     SendOpCode("SetCurrentProgramScene", settings.resultScene, *client);
                     break;
+                case 13:
+                    // TODO:: COURSE RESULT
+                    // transition goes to 5 -> 2 -> 13
+                    break;
                 default:
                     std::cout << currentDateTime() << "Unhandled procSelecter value: " << currentProc << std::endl;
                     break;
@@ -114,6 +118,7 @@ void recordDelayTask(int currentProc, WebSocketClient& client) {
             else hasRequestRecordingStop = false;
             break;
         case 2:
+            if (hasRequestRecordingStop) hasRequestRecordingStop = false;
             SendOpCode("StopReplayBuffer", client);
             break;
 

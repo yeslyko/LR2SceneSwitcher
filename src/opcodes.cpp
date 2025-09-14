@@ -1,6 +1,7 @@
 #include "pch.h"
 #include "opcodes.h"
 #include <iostream>
+#include <future>
 
 std::string sha256_binary(const std::string& input) {
     SHA256 ctx;
@@ -36,7 +37,7 @@ bool ReadOpCode(std::string message, WebSocketClient& client) {
             request = {
                 {"op", 1},  // Identify operation
                 {"d", {
-                    {"eventSubscriptions", 33}
+                    {"eventSubscriptions", 65}
                 }}
             };
             request["d"]["rpcVersion"] = msgSerialized["d"]["rpcVersion"];
@@ -89,6 +90,26 @@ bool ReadOpCode(std::string message, WebSocketClient& client) {
             client.startSendThread(LR2Listen);
             return true;
 
+        case 5:
+            if (LR2::isInit) {
+                std::string eventType = msgSerialized["d"]["eventType"];
+                if (eventType.compare("ReplayBufferSaved") == 0) {
+                    std::async(std::launch::async, recordRenameTask, msgSerialized["d"]["eventData"]["savedReplayPath"]);
+                }
+            }
+            return true;
+
+        case 7:
+            if (LR2::isInit) {
+                std::string requestType = msgSerialized["d"]["requestType"];
+                if (msgSerialized["d"]["requestStatus"]["result"] == true) {
+                    if (requestType.compare("StopRecord") == 0) {
+                        std::async(std::launch::async, recordRenameTask, msgSerialized["d"]["responseData"]["outputPath"]);
+                    }
+                }
+            }
+            return true;
+
         default:
             std::cout << currentDateTime() << "Unhandled opcode: " << opcode << std::endl;
             return true;
@@ -115,4 +136,119 @@ void SendOpCode(std::string reqName, std::string argument, WebSocketClient& clie
 
     std::string datadump = data.dump();
     client.sendMessage(datadump);
+}
+
+BOOL recordRename = false;
+void recordRenameTask(std::string outputPath) {
+    if (recordRename) return;
+    if (outputPath.empty()) return;
+
+    recordRename = true;
+    while (recordRename) {
+        std::filesystem::path p{ outputPath };
+        
+        std::string oPath = p.parent_path().string();
+        std::string oExtension = p.extension().string();
+        std::string rFullPath;
+        if (LR2::pGame->gameplay.courseType == 0 || LR2::pGame->gameplay.courseType == 2) {
+            rFullPath = std::format("{}/{} [{} - {} - {}]{}",
+                oPath,
+
+                convStr(LR2::pGame->sSelect.bmsList[LR2::pGame->sSelect.cur_song].courseTitle[LR2::pGame->gameplay.courseStageNow].body),
+                lamps[LR2::pGame->gameplay.player[0].clearType],
+                grades[getGrade()],
+                LR2::pGame->gameplay.player[0].exscore,
+
+                oExtension);
+        }
+        else {
+            rFullPath = std::format("{}/{} [{} - {} - {}]{}",
+                oPath,
+
+                convStr(LR2::pGame->sSelect.metaSelected.title.body),
+                lamps[LR2::pGame->gameplay.player[0].clearType],
+                grades[getGrade()],
+                LR2::pGame->gameplay.player[0].exscore,
+
+                oExtension);
+        }
+
+        try {
+            if (std::filesystem::exists(outputPath)) {
+                if (std::filesystem::exists(rFullPath)) return;
+                std::filesystem::rename(outputPath, rFullPath);
+
+                if (std::filesystem::exists(rFullPath)) {
+                    std::cout << currentDateTime() << "Renamed " << outputPath << " to " << rFullPath << std::endl;
+                    recordRename = false;
+                }
+            }
+        }
+        catch (const std::exception& e) {
+            std::cout << currentDateTime() << "Error: " << e.what() << std::endl;
+        }
+
+        std::this_thread::sleep_for(std::chrono::seconds(1));
+    }
+}
+
+int getGrade() {
+    float score = (float)(LR2::pGame->gameplay.player[0].judgecount[5] * 2 +
+        LR2::pGame->gameplay.player[0].judgecount[4]);
+    float scoreMax = float(LR2::pGame->gameplay.player[0].totalnotes * 2);
+
+    if (score == scoreMax) {
+        return 8;
+    }
+    else if (score / scoreMax >= 8.f / 9.f) {
+        return 7;
+    }
+    else if (score / scoreMax >= 7.f / 9.f) {
+        return 6;
+    }
+    else if (score / scoreMax >= 6.f / 9.f) {
+        return 5;
+    }
+    else if (score / scoreMax >= 5.f / 9.f) {
+        return 4;
+    }
+    else if (score / scoreMax >= 4.f / 9.f) {
+        return 3;
+    }
+    else if (score / scoreMax >= 3.f / 9.f) {
+        return 2;
+    }
+    else if (score / scoreMax >= 2.f / 9.f) {
+        return 1;
+    }
+    else {
+        return 0;
+    }
+}
+
+std::string convStr(const std::string& str) {
+    if (str.empty()) return {};
+
+    int wSize = MultiByteToWideChar(932, 0, str.c_str(),
+        (int)str.size(), nullptr, 0);
+    if (wSize == 0) return {};
+    std::wstring wide(wSize, 0);
+    MultiByteToWideChar(932, 0, str.c_str(),
+        (int)str.size(), wide.data(), wSize);
+
+    int oSize = WideCharToMultiByte(CP_ACP, 0, wide.c_str(),
+        (int)wide.size(), nullptr, 0,
+        nullptr, nullptr);
+    if (oSize == 0) return {};
+    std::string result(oSize, 0);
+    WideCharToMultiByte(CP_ACP, 0, wide.c_str(),
+        (int)wide.size(), result.data(), oSize,
+        nullptr, nullptr);
+
+    std::string invalid = R"(\/:*?"<>|)";
+    result.erase(std::remove_if(result.begin(), result.end(),
+        [&invalid](char c) { return invalid.find(c) != std::string::npos; }),
+        result.end());
+
+    return result;
 }
