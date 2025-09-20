@@ -101,7 +101,7 @@ bool ReadOpCode(std::string message, WebSocketClient& client) {
                 std::string outputState = msgSerialized["d"]["eventData"]["outputState"];
                 if (outputState.compare("OBS_WEBSOCKET_OUTPUT_STOPPED") != 0) return true;
 
-                std::this_thread::sleep_for(std::chrono::milliseconds(50)); // for some reason even we waited for STOPPED event and send start request it won't start
+                std::this_thread::sleep_for(std::chrono::milliseconds(100)); // for some reason even we waited for STOPPED event and send start request it won't start
                 
                 SendOpCode("StartReplayBuffer", client);
                 reqRestartRecord = false;
@@ -112,7 +112,7 @@ bool ReadOpCode(std::string message, WebSocketClient& client) {
                 std::string outputState = msgSerialized["d"]["eventData"]["outputState"];
                 if (outputState.compare("OBS_WEBSOCKET_OUTPUT_STOPPED") == 0) {
                     if (reqRestartRecord) {
-                        std::this_thread::sleep_for(std::chrono::milliseconds(50)); // same reason as above
+                        std::this_thread::sleep_for(std::chrono::milliseconds(100)); // same reason as above
 
                         SendOpCode("StartRecord", client);
                         reqRestartRecord = false;
