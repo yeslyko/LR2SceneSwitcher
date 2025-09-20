@@ -89,6 +89,8 @@ void onSceneInit(SafetyHookContext& regs) {
 }
 
 void onSceneLoop(SafetyHookContext& regs) {
+    if (!wasInitialized) return;
+
     switch (regs.eax) {
     case 5:
     case 13:
@@ -118,6 +120,8 @@ void onSceneLoop(SafetyHookContext& regs) {
 }
 
 void recordDelayTask(int sceneIdx) {
+    if (!wasInitialized) return;
+
     switch (sceneIdx) {
     case 2:
     case 13:
