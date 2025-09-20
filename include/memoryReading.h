@@ -1,6 +1,10 @@
 #pragma once
-#include <LR2Mem/LR2Bindings.hpp>
 #include <websocket.h>
 
+extern bool reqRestartRecord;
+extern bool isCourseResult;
+
 int LR2Listen(WebSocketClient* client);
-void recordDelayTask(int currentProc, WebSocketClient& client);
+void onSceneInit(SafetyHookContext& regs);
+void onSceneLoop(SafetyHookContext& regs);
+void recordDelayTask(int sceneIdx);

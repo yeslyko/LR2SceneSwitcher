@@ -57,6 +57,7 @@ void LoadSettings(HMODULE hModule) {
 			L"selectScene = \n"
 			L"playScene = \n"
 			L"resultScene = \n"
+			L"courseResultScene = \n"
 			L"# Set your record related settings in here.\n"
 			L"# Available types are 1 for Recoding and 2 for ReplayBuffer\n"
 			L"# Default Record Shortcut Key is F6 (0x75)\n"
@@ -122,6 +123,11 @@ void LoadSettings(HMODULE hModule) {
 				std::string resultScene(wresultScene.begin(), wresultScene.end());
 				settings.resultScene = resultScene;
 			}
+			if (line.starts_with(L"courseResultScene = ")) {
+				std::wstring wcourseResultScene = line.substr(std::wstring_view(L"courseResultScene = ").length());
+				std::string courseResultScene(wcourseResultScene.begin(), wcourseResultScene.end());
+				settings.courseResultScene = courseResultScene;
+			}
 			if (line.starts_with(L"recordType = ")) {
 				std::wstring wrecordType = line.substr(std::wstring_view(L"recordType = ").length());
 				int recordType = std::stoi(wrecordType);
@@ -153,6 +159,7 @@ void LoadSettings(HMODULE hModule) {
 			<< "\nSelect Scene: " << settings.selectScene
 			<< "\nPlay Scene: " << settings.playScene
 			<< "\nResult Scene: " << settings.resultScene
+			<< "\nCourse Result Scene: " << settings.courseResultScene
 			<< "\nRecord Type: " << settings.recordType
 			<< "\nRecord Shortcut Key: 0x" << std::hex << settings.recordShortcutKey
 			<< "\nRecord Start Delay: " << settings.recordStartDelay

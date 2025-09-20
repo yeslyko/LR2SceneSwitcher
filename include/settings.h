@@ -11,6 +11,7 @@ struct Settings {
     std::string selectScene;
     std::string playScene;
     std::string resultScene;
+    std::string courseResultScene;
     int rpcVersion;
     bool authenticated;
     int recordType = 0; // 0 - Disable, 1 - Record, 2 - ReplayBuffer

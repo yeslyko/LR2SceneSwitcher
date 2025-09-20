@@ -1,5 +1,7 @@
 #include "pch.h"
 #include "opcodes.h"
+#include "memoryReading.h"
+#include "uuid.h"
 #include <iostream>
 #include <future>
 
@@ -90,25 +92,42 @@ bool ReadOpCode(std::string message, WebSocketClient& client) {
             client.startSendThread(LR2Listen);
             return true;
 
-        case 5:
-            if (LR2::isInit) {
-                std::string eventType = msgSerialized["d"]["eventType"];
-                if (eventType.compare("ReplayBufferSaved") == 0) {
-                    std::async(std::launch::async, recordRenameTask, msgSerialized["d"]["eventData"]["savedReplayPath"]);
-                }
-            }
-            return true;
+        case 5: { // event //
+            std::string eventType = msgSerialized["d"]["eventType"];
+            if (eventType.compare("ReplayBufferStateChanged") == 0) {
+                if (!reqRestartRecord) return true;
+                if (msgSerialized["d"]["eventData"]["outputActive"] == true) return true;
+                
+                std::string outputState = msgSerialized["d"]["eventData"]["outputState"];
+                if (outputState.compare("OBS_WEBSOCKET_OUTPUT_STOPPED") != 0) return true;
 
-        case 7:
-            if (LR2::isInit) {
-                std::string requestType = msgSerialized["d"]["requestType"];
-                if (msgSerialized["d"]["requestStatus"]["result"] == true) {
-                    if (requestType.compare("StopRecord") == 0) {
-                        std::async(std::launch::async, recordRenameTask, msgSerialized["d"]["responseData"]["outputPath"]);
+                std::this_thread::sleep_for(std::chrono::milliseconds(50)); // for some reason even we waited for STOPPED event and send start request it won't start
+                
+                SendOpCode("StartReplayBuffer", client);
+                reqRestartRecord = false;
+            }
+            else if (eventType.compare("RecordStateChanged") == 0) {
+                if (msgSerialized["d"]["eventData"]["outputActive"] == true) return true;
+
+                std::string outputState = msgSerialized["d"]["eventData"]["outputState"];
+                if (outputState.compare("OBS_WEBSOCKET_OUTPUT_STOPPED") == 0) {
+                    if (reqRestartRecord) {
+                        std::this_thread::sleep_for(std::chrono::milliseconds(50)); // same reason as above
+
+                        SendOpCode("StartRecord", client);
+                        reqRestartRecord = false;
+
+                        return true;
                     }
+                    
+                    std::async(std::launch::async, recordRenameTask, msgSerialized["d"]["eventData"]["outputPath"]);
                 }
             }
+            else if (eventType.compare("ReplayBufferSaved") == 0) {
+                std::async(std::launch::async, recordRenameTask, msgSerialized["d"]["eventData"]["savedReplayPath"]);
+            }
             return true;
+        }
 
         default:
             std::cout << currentDateTime() << "Unhandled opcode: " << opcode << std::endl;
@@ -129,7 +148,7 @@ void SendOpCode(std::string reqName, std::string argument, WebSocketClient& clie
     json data;
     data["op"] = 6;
     data["d"]["requestType"] = reqName;
-    data["d"]["requestId"] = "idk whats this";
+    data["d"]["requestId"] = uuid::generate_uuid_v4();
     if (reqName._Equal("SetCurrentProgramScene") && !argument.empty()) {
         data["d"]["requestData"]["sceneName"] = argument;
     }
@@ -142,6 +161,7 @@ BOOL recordRename = false;
 void recordRenameTask(std::string outputPath) {
     if (recordRename) return;
     if (outputPath.empty()) return;
+    if (!LR2::isInit) return;
 
     recordRename = true;
     while (recordRename) {
@@ -149,29 +169,21 @@ void recordRenameTask(std::string outputPath) {
         
         std::string oPath = p.parent_path().string();
         std::string oExtension = p.extension().string();
-        std::string rFullPath;
-        if (LR2::pGame->gameplay.courseType == 0 || LR2::pGame->gameplay.courseType == 2) {
-            rFullPath = std::format("{}/{} [{} - {} - {}]{}",
-                oPath,
+        std::string rFullPath = "";
+        std::string songName = convStr(LR2::pGame->sSelect.metaSelected.title.body);
 
-                convStr(LR2::pGame->sSelect.bmsList[LR2::pGame->sSelect.cur_song].courseTitle[LR2::pGame->gameplay.courseStageNow].body),
-                lamps[LR2::pGame->gameplay.player[0].clearType],
-                grades[getGrade()],
-                LR2::pGame->gameplay.player[0].exscore,
+        if ((LR2::pGame->gameplay.courseType == 0 || LR2::pGame->gameplay.courseType == 2) && !isCourseResult)
+            songName = convStr(LR2::pGame->sSelect.bmsList[LR2::pGame->sSelect.cur_song].courseTitle[LR2::pGame->gameplay.courseStageNow].body);
 
-                oExtension);
-        }
-        else {
-            rFullPath = std::format("{}/{} [{} - {} - {}]{}",
-                oPath,
+        rFullPath = std::format("{}/{} [{} - {} - {}]{}",
+            oPath,
 
-                convStr(LR2::pGame->sSelect.metaSelected.title.body),
-                lamps[LR2::pGame->gameplay.player[0].clearType],
-                grades[getGrade()],
-                LR2::pGame->gameplay.player[0].exscore,
+            songName,
+            lamps[LR2::pGame->gameplay.player[0].clearType],
+            grades[getGrade()],
+            LR2::pGame->gameplay.player[0].exscore,
 
-                oExtension);
-        }
+            oExtension);
 
         try {
             if (std::filesystem::exists(outputPath)) {
@@ -181,6 +193,8 @@ void recordRenameTask(std::string outputPath) {
                 if (std::filesystem::exists(rFullPath)) {
                     std::cout << currentDateTime() << "Renamed " << outputPath << " to " << rFullPath << std::endl;
                     recordRename = false;
+
+                    if (isCourseResult) isCourseResult = false;
                 }
             }
         }

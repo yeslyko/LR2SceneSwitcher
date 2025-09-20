@@ -17,6 +17,9 @@
 #include <sha256/sha256.c>
 #include <ctime>
 
+SafetyHookMid onSceneInitHook;
+SafetyHookMid onSceneLoopHook;
+
 using json = nlohmann::json;
 using namespace nlohmann::literals;
 
@@ -32,6 +35,12 @@ BOOL APIENTRY DllMain(HMODULE hModule,
 	{
 	case DLL_PROCESS_ATTACH:
 		LoadSettings(hModule);
+
+		onSceneInitHook = safetyhook::create_mid((void*)((uintptr_t)GetModuleHandle(NULL) + 0x031BB6), onSceneInit);
+		onSceneLoopHook = safetyhook::create_mid((void*)((uintptr_t)GetModuleHandle(NULL) + 0x033746), onSceneLoop);
+
+		LR2::Init();
+		
 #ifdef _DEBUG
 		if (CreateThread(nullptr, 0, (LPTHREAD_START_ROUTINE)StartWebSocketClient, nullptr, 0, nullptr) == nullptr) {
 			std::cout << currentDateTime() << "Failed to create WebSocket client thread\n";

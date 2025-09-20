@@ -3,6 +3,7 @@
 #include "websocket.h"
 #include "settings.h"
 #include "memoryReading.h"
+#include "LR2Mem/LR2Bindings.hpp"
 #include <json/single_include/nlohmann/json.hpp>
 #include <string>
 

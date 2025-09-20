@@ -18,3 +18,4 @@
 #include <fstream>
 #include <vector>
 #include <json/single_include/nlohmann/json.hpp>
+#include <safetyhook/include/safetyhook.hpp>

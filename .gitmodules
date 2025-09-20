@@ -10,3 +10,6 @@
 [submodule "externals/LR2Mem"]
 	path = externals/LR2Mem
 	url = git@github.com:MatVeiQaaa/LR2Mem.git
+[submodule "externals/safetyhook"]
+	path = externals/safetyhook
+	url = https://github.com/cursey/safetyhook.git
