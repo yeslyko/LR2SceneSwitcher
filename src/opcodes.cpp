@@ -120,11 +120,11 @@ bool ReadOpCode(std::string message, WebSocketClient& client) {
                         return true;
                     }
                     
-                    std::async(std::launch::async, recordRenameTask, msgSerialized["d"]["eventData"]["outputPath"]);
+                    std::async(std::launch::async, recordRenameTask, msgSerialized["d"]["eventData"]["outputPath"].get<std::string>(), _playInfo);
                 }
             }
             else if (eventType.compare("ReplayBufferSaved") == 0) {
-                std::async(std::launch::async, recordRenameTask, msgSerialized["d"]["eventData"]["savedReplayPath"]);
+                std::async(std::launch::async, recordRenameTask, msgSerialized["d"]["eventData"]["savedReplayPath"].get<std::string>(), _playInfo);
             }
             return true;
         }
@@ -158,7 +158,7 @@ void SendOpCode(std::string reqName, std::string argument, WebSocketClient& clie
 }
 
 BOOL recordRename = false;
-void recordRenameTask(std::string outputPath) {
+void recordRenameTask(std::string outputPath, playInfo playInfo) {
     if (recordRename) return;
     if (outputPath.empty()) return;
     if (!LR2::isInit) return;
@@ -170,31 +170,31 @@ void recordRenameTask(std::string outputPath) {
         std::string oPath = p.parent_path().string();
         std::string oExtension = p.extension().string();
         std::string rFullPath = "";
-        std::string songName = convStr(LR2::pGame->sSelect.metaSelected.title.body);
-
-        if ((LR2::pGame->gameplay.courseType == 0 || LR2::pGame->gameplay.courseType == 2) && !isCourseResult)
-            songName = convStr(LR2::pGame->sSelect.bmsList[LR2::pGame->sSelect.cur_song].courseTitle[LR2::pGame->gameplay.courseStageNow].body);
+        std::string songName = playInfo.songName;
 
         rFullPath = std::format("{}/{} [{} - {} - {}]{}",
             oPath,
 
             songName,
-            lamps[LR2::pGame->gameplay.player[0].clearType],
-            grades[getGrade()],
-            LR2::pGame->gameplay.player[0].exscore,
+            lamps[playInfo.lamp],
+            grades[getGrade(playInfo.pgreat, playInfo.great, playInfo.totalNotes)],
+            playInfo.exscore,
 
             oExtension);
 
         try {
             if (std::filesystem::exists(outputPath)) {
-                if (std::filesystem::exists(rFullPath)) return;
+                if (std::filesystem::exists(rFullPath)) {
+                    recordRename = false;
+                    return;
+                }
                 std::filesystem::rename(outputPath, rFullPath);
 
                 if (std::filesystem::exists(rFullPath)) {
                     std::cout << currentDateTime() << "Renamed " << outputPath << " to " << rFullPath << std::endl;
-                    recordRename = false;
-
                     if (isCourseResult) isCourseResult = false;
+
+                    recordRename = false;
                 }
             }
         }
@@ -206,10 +206,9 @@ void recordRenameTask(std::string outputPath) {
     }
 }
 
-int getGrade() {
-    float score = (float)(LR2::pGame->gameplay.player[0].judgecount[5] * 2 +
-        LR2::pGame->gameplay.player[0].judgecount[4]);
-    float scoreMax = float(LR2::pGame->gameplay.player[0].totalnotes * 2);
+int getGrade(int pgreat, int great, int totalNotes) {
+    float score = (float)(pgreat * 2 + great);
+    float scoreMax = float(totalNotes * 2);
 
     if (score == scoreMax) {
         return 8;

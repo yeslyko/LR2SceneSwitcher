@@ -7,6 +7,7 @@
 #include <future>
 
 WebSocketClient* webSocketClient = {};
+playInfo _playInfo = {};
 bool wasInitialized = false;
 bool hasRequestRecordingStop = false;
 bool isCourseResult = false;
@@ -90,6 +91,7 @@ void onSceneInit(SafetyHookContext& regs) {
 
 void onSceneLoop(SafetyHookContext& regs) {
     if (!wasInitialized) return;
+    if (!LR2::isInit) return;
 
     switch (regs.eax) {
     case 5:
@@ -97,6 +99,18 @@ void onSceneLoop(SafetyHookContext& regs) {
         if (settings.recordType > 0) {
             if (GetAsyncKeyState(settings.recordShortcutKey) & 0x8000) {
                 if (!hasRequestRecordingStop) {
+                    {
+                        _playInfo.songName = convStr(LR2::pGame->sSelect.metaSelected.title.body);
+                        _playInfo.lamp = LR2::pGame->gameplay.player[0].clearType;
+                        _playInfo.totalNotes = LR2::pGame->gameplay.player[0].totalnotes;
+                        _playInfo.exscore = LR2::pGame->gameplay.player[0].exscore;
+                        _playInfo.pgreat = LR2::pGame->gameplay.player[0].judgecount[5];
+                        _playInfo.great = LR2::pGame->gameplay.player[0].judgecount[4];
+
+                        if ((LR2::pGame->gameplay.courseType == 0 || LR2::pGame->gameplay.courseType == 2) && !isCourseResult)
+                            _playInfo.songName = convStr(LR2::pGame->sSelect.bmsList[LR2::pGame->sSelect.cur_song].courseTitle[LR2::pGame->gameplay.courseStageNow].body);
+                    }
+
                     switch (settings.recordType) {
                     case 1:
                         SendOpCode("StopRecord", *webSocketClient);
