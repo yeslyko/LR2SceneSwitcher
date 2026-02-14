@@ -1,6 +1,9 @@
 #include "pch.h"
 #include "opcodes.h"
+#include "memoryReading.h"
+#include "uuid.h"
 #include <iostream>
+#include <future>
 
 std::string sha256_binary(const std::string& input) {
     SHA256 ctx;
@@ -36,7 +39,7 @@ bool ReadOpCode(std::string message, WebSocketClient& client) {
             request = {
                 {"op", 1},  // Identify operation
                 {"d", {
-                    {"eventSubscriptions", 33}
+                    {"eventSubscriptions", 65}
                 }}
             };
             request["d"]["rpcVersion"] = msgSerialized["d"]["rpcVersion"];
@@ -89,6 +92,43 @@ bool ReadOpCode(std::string message, WebSocketClient& client) {
             client.startSendThread(LR2Listen);
             return true;
 
+        case 5: { // event //
+            std::string eventType = msgSerialized["d"]["eventType"];
+            if (eventType.compare("ReplayBufferStateChanged") == 0) {
+                if (!reqRestartRecord) return true;
+                if (msgSerialized["d"]["eventData"]["outputActive"] == true) return true;
+                
+                std::string outputState = msgSerialized["d"]["eventData"]["outputState"];
+                if (outputState.compare("OBS_WEBSOCKET_OUTPUT_STOPPED") != 0) return true;
+
+                std::this_thread::sleep_for(std::chrono::milliseconds(100)); // for some reason even we waited for STOPPED event and send start request it won't start
+                
+                SendOpCode("StartReplayBuffer", client);
+                reqRestartRecord = false;
+            }
+            else if (eventType.compare("RecordStateChanged") == 0) {
+                if (msgSerialized["d"]["eventData"]["outputActive"] == true) return true;
+
+                std::string outputState = msgSerialized["d"]["eventData"]["outputState"];
+                if (outputState.compare("OBS_WEBSOCKET_OUTPUT_STOPPED") == 0) {
+                    if (reqRestartRecord) {
+                        std::this_thread::sleep_for(std::chrono::milliseconds(100)); // same reason as above
+
+                        SendOpCode("StartRecord", client);
+                        reqRestartRecord = false;
+
+                        return true;
+                    }
+                    
+                    std::async(std::launch::async, recordRenameTask, msgSerialized["d"]["eventData"]["outputPath"].get<std::string>(), _playInfo);
+                }
+            }
+            else if (eventType.compare("ReplayBufferSaved") == 0) {
+                std::async(std::launch::async, recordRenameTask, msgSerialized["d"]["eventData"]["savedReplayPath"].get<std::string>(), _playInfo);
+            }
+            return true;
+        }
+
         default:
             std::cout << currentDateTime() << "Unhandled opcode: " << opcode << std::endl;
             return true;
@@ -104,13 +144,124 @@ bool ReadOpCode(std::string message, WebSocketClient& client) {
     }
 }
 
-void SendOpCode(std::string argument, WebSocketClient& client) {
+void SendOpCode(std::string reqName, std::string argument, WebSocketClient& client) {
     json data;
     data["op"] = 6;
-    data["d"]["requestType"] = "SetCurrentProgramScene";
-    data["d"]["requestId"] = "idk whats this";
-    data["d"]["requestData"]["sceneName"] = argument;
+    data["d"]["requestType"] = reqName;
+    data["d"]["requestId"] = uuid::generate_uuid_v4();
+    if (reqName._Equal("SetCurrentProgramScene") && !argument.empty()) {
+        data["d"]["requestData"]["sceneName"] = argument;
+    }
 
     std::string datadump = data.dump();
     client.sendMessage(datadump);
+}
+
+BOOL recordRename = false;
+void recordRenameTask(std::string outputPath, playInfo playInfo) {
+    if (recordRename) return;
+    if (outputPath.empty()) return;
+    if (!LR2::isInit) return;
+
+    recordRename = true;
+    while (recordRename) {
+        std::filesystem::path p{ outputPath };
+        
+        std::string oPath = p.parent_path().string();
+        std::string oExtension = p.extension().string();
+        std::string rFullPath = "";
+        std::string songName = playInfo.songName;
+
+        rFullPath = std::format("{}/{} [{} - {} - {}]{}",
+            oPath,
+
+            songName,
+            lamps[playInfo.lamp],
+            grades[getGrade(playInfo.pgreat, playInfo.great, playInfo.totalNotes)],
+            playInfo.exscore,
+
+            oExtension);
+
+        try {
+            if (std::filesystem::exists(outputPath)) {
+                if (std::filesystem::exists(rFullPath)) {
+                    recordRename = false;
+                    return;
+                }
+                std::filesystem::rename(outputPath, rFullPath);
+
+                if (std::filesystem::exists(rFullPath)) {
+                    std::cout << currentDateTime() << "Renamed " << outputPath << " to " << rFullPath << std::endl;
+                    if (isCourseResult) isCourseResult = false;
+
+                    recordRename = false;
+                }
+            }
+        }
+        catch (const std::exception& e) {
+            std::cout << currentDateTime() << "Error: " << e.what() << std::endl;
+        }
+
+        std::this_thread::sleep_for(std::chrono::seconds(1));
+    }
+}
+
+int getGrade(int pgreat, int great, int totalNotes) {
+    float score = (float)(pgreat * 2 + great);
+    float scoreMax = float(totalNotes * 2);
+
+    if (score == scoreMax) {
+        return 8;
+    }
+    else if (score / scoreMax >= 8.f / 9.f) {
+        return 7;
+    }
+    else if (score / scoreMax >= 7.f / 9.f) {
+        return 6;
+    }
+    else if (score / scoreMax >= 6.f / 9.f) {
+        return 5;
+    }
+    else if (score / scoreMax >= 5.f / 9.f) {
+        return 4;
+    }
+    else if (score / scoreMax >= 4.f / 9.f) {
+        return 3;
+    }
+    else if (score / scoreMax >= 3.f / 9.f) {
+        return 2;
+    }
+    else if (score / scoreMax >= 2.f / 9.f) {
+        return 1;
+    }
+    else {
+        return 0;
+    }
+}
+
+std::string convStr(const std::string& str) {
+    if (str.empty()) return {};
+
+    int wSize = MultiByteToWideChar(932, 0, str.c_str(),
+        (int)str.size(), nullptr, 0);
+    if (wSize == 0) return {};
+    std::wstring wide(wSize, 0);
+    MultiByteToWideChar(932, 0, str.c_str(),
+        (int)str.size(), wide.data(), wSize);
+
+    int oSize = WideCharToMultiByte(CP_ACP, 0, wide.c_str(),
+        (int)wide.size(), nullptr, 0,
+        nullptr, nullptr);
+    if (oSize == 0) return {};
+    std::string result(oSize, 0);
+    WideCharToMultiByte(CP_ACP, 0, wide.c_str(),
+        (int)wide.size(), result.data(), oSize,
+        nullptr, nullptr);
+
+    std::string invalid = R"(\/:*?"<>|)";
+    result.erase(std::remove_if(result.begin(), result.end(),
+        [&invalid](char c) { return invalid.find(c) != std::string::npos; }),
+        result.end());
+
+    return result;
 }

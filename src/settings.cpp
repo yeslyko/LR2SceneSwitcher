@@ -56,7 +56,16 @@ void LoadSettings(HMODULE hModule) {
 			L"# Type your OBS scene names here.\n"
 			L"selectScene = \n"
 			L"playScene = \n"
-			L"resultScene = \n";
+			L"resultScene = \n"
+			L"courseResultScene = \n"
+			L"# Set your record related settings in here.\n"
+			L"# Available types are 1 for Recoding and 2 for ReplayBuffer\n"
+			L"# Default Record Shortcut Key is F6 (0x75)\n"
+			L"# Delays are in milliseconds\n"
+			L"recordType = 0\n"
+			L"recordShortcutKey = 0x75\n"
+			L"recordStartDelay = 0\n"
+			L"recordEndDelay = 0\n";
 		settings_list.open(settings_path, std::ios::out | std::ios::trunc);
 		settings_list << settingstemplate;
 		settings_list.close();
@@ -114,6 +123,31 @@ void LoadSettings(HMODULE hModule) {
 				std::string resultScene(wresultScene.begin(), wresultScene.end());
 				settings.resultScene = resultScene;
 			}
+			if (line.starts_with(L"courseResultScene = ")) {
+				std::wstring wcourseResultScene = line.substr(std::wstring_view(L"courseResultScene = ").length());
+				std::string courseResultScene(wcourseResultScene.begin(), wcourseResultScene.end());
+				settings.courseResultScene = courseResultScene;
+			}
+			if (line.starts_with(L"recordType = ")) {
+				std::wstring wrecordType = line.substr(std::wstring_view(L"recordType = ").length());
+				int recordType = std::stoi(wrecordType);
+				settings.recordType = recordType;
+			}
+			if (line.starts_with(L"recordShortcutKey = ")) {
+				std::wstring wrecordShortcutKey = line.substr(std::wstring_view(L"recordShortcutKey = ").length());
+				int recordShortcutKey = std::stoi(wrecordShortcutKey, nullptr, 16);
+				settings.recordShortcutKey = recordShortcutKey;
+			}
+			if (line.starts_with(L"recordStartDelay = ")) {
+				std::wstring wrecordStartDelay = line.substr(std::wstring_view(L"recordStartDelay = ").length());
+				int recordStartDelay = std::stoi(wrecordStartDelay);
+				settings.recordStartDelay = recordStartDelay;
+			}
+			if (line.starts_with(L"recordEndDelay = ")) {
+				std::wstring wrecordEndDelay = line.substr(std::wstring_view(L"recordEndDelay = ").length());
+				int recordEndDelay = std::stoi(wrecordEndDelay);
+				settings.recordEndDelay = recordEndDelay;
+			}
 			// Heyy! That's still less bloated than Tachi Score Importer!!!
 		}
 
@@ -125,6 +159,11 @@ void LoadSettings(HMODULE hModule) {
 			<< "\nSelect Scene: " << settings.selectScene
 			<< "\nPlay Scene: " << settings.playScene
 			<< "\nResult Scene: " << settings.resultScene
+			<< "\nCourse Result Scene: " << settings.courseResultScene
+			<< "\nRecord Type: " << settings.recordType
+			<< "\nRecord Shortcut Key: 0x" << std::hex << settings.recordShortcutKey
+			<< "\nRecord Start Delay: " << settings.recordStartDelay
+			<< "\nRecord End Delay: " << settings.recordEndDelay
 			<< std::endl;
 	}
 }
